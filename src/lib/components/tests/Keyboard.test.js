@@ -868,10 +868,12 @@ it('Keyboard handleButtonHold will work', (done) => {
   expect(keyboard.options.buttonHoldCycleTime).toBe(150);
   expect(keyboard.options.buttonHoldAllowedButtons).toEqual([SP]);
 
+  expect(keyboard.allowHandleButtonHold(SP)).toBe(true);
+  expect(keyboard.allowHandleButtonHold("{tab}")).toBe(false);
+
   const key = keyboard.getButtonElement(SP);
   expect(key).toBeTruthy();
-  key.onmousedown();
-
+  
   keyboard.handleButtonMouseDown(SP, {
     target: key
   });
@@ -885,14 +887,34 @@ it('Keyboard handleButtonHold will work', (done) => {
   }, 500);
 });
 
+it('Keyboard handleButtonHold will not be called if hold too short', (done) => {
+  const SP = "{space}";
+  const keyboard = new Keyboard({ useMouseEvents: true, buttonHoldDelay: 500, buttonHoldCycleTime: 150, buttonHoldAllowedButtons: [SP] });
+  const hbspy = spyOn(keyboard, 'handleButtonHold').and.callThrough();
+  
+  const key = keyboard.getButtonElement(SP);
+  expect(key).toBeTruthy();  
+
+  keyboard.handleButtonMouseDown(SP, {
+    target: key
+  });
+
+  setTimeout(() => {
+    expect(hbspy).not.toHaveBeenCalled();
+    keyboard.handleButtonMouseUp(SP, {
+      target: key
+    });
+    done();
+  }, 250);
+});
+
 it('Keyboard handleButtonHold will ignore disallowed keys', (done) => {
   const TAB = "{tab}";
   const keyboard = new Keyboard({ useMouseEvents: true, buttonHoldDelay: 250, buttonHoldCycleTime: 150, buttonHoldAllowedButtons: ["{space}"] });
   const hbspy = spyOn(keyboard, 'handleButtonHold').and.callThrough();
 
   const key = keyboard.getButtonElement(TAB);
-  expect(key).toBeTruthy();
-  key.onmousedown();
+  expect(key).toBeTruthy();  
 
   keyboard.handleButtonMouseDown(TAB, {
     target: key
