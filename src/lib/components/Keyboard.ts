@@ -13,6 +13,9 @@ import {
 } from "../interfaces";
 import CandidateBox from "./CandidateBox";
 
+const BUTTON_HOLD_DELAY_DEFAULT = 500;
+const BUTTON_HOLD_CYCLE_DEFAULT = 100;
+
 /**
  * Root class for simple-keyboard.
  * This class:
@@ -127,6 +130,9 @@ class SimpleKeyboard {
      * @property {boolean} useMouseEvents Opt out of PointerEvents handling, falling back to the prior mouse event logic.
      * @property {function} destroy Clears keyboard listeners and DOM elements.
      * @property {boolean} disableButtonHold Disable button hold action.
+     * @property {array} buttonHoldAllowedButtons control buttons which are enabled for hold action
+     * @property {number} buttonHoldDelay Delay time in ms, after which a button hold is recognized (default: 500).
+     * @property {number} buttonHoldCycleTime Button Hold Action cycle time (default: 100).
      * @property {boolean} rtl Adds unicode right-to-left control characters to input return values.
      * @property {function} onKeyReleased Executes the callback function on key release.
      * @property {array} modules Module classes to be loaded by simple-keyboard.
@@ -144,6 +150,9 @@ class SimpleKeyboard {
       preventMouseDownDefault: false,
       enableLayoutCandidates: true,
       excludeFromLayout: {},
+      buttonHoldAllowedButtons: ["{delete}","{backspace}","{bksp}","{space}","{tab}","{arrowright}","{arrowleft}","{arrowup}","{arrowdown}"],
+      buttonHoldDelay : BUTTON_HOLD_DELAY_DEFAULT,
+      buttonHoldCycleTime: BUTTON_HOLD_CYCLE_DEFAULT,
       ...options,
     };
 
@@ -644,30 +653,23 @@ class SimpleKeyboard {
     /**
      * @type {object} Time to wait until a key hold is detected
      */
-    if (!this.options.disableButtonHold) {
+    if (this.allowHandleButtonHold(button)) {
       this.holdTimeout = window.setTimeout(() => {
-        if (
-          (this.getMouseHold() &&
-            // TODO: This needs to be configurable through options
-            ((!button.includes("{") && !button.includes("}")) ||
-              button === "{delete}" ||
-              button === "{backspace}" ||
-              button === "{bksp}" ||
-              button === "{space}" ||
-              button === "{tab}")) ||
-          button === "{arrowright}" ||
-          button === "{arrowleft}" ||
-          button === "{arrowup}" ||
-          button === "{arrowdown}"
-        ) {
-          if (this.options.debug) console.log("Button held:", button);
-
+        if (this.getMouseHold()) {
+          if (this.options.debug) {
+            console.log("Button held:", button)
+          };
           this.handleButtonHold(button);
         }
         clearTimeout(this.holdTimeout);
-      }, 500);
+      }, this.options.buttonHoldDelay ?? BUTTON_HOLD_DELAY_DEFAULT);
     }
   }
+
+  allowHandleButtonHold(button: string): boolean {
+    const allowedButtons = this.options.buttonHoldAllowedButtons || [];
+    return !this.options.disableButtonHold && (!button.includes("{") && !button.includes("}") || allowedButtons.includes(button));
+  }   
 
   /**
    * Handles button mouseup
@@ -744,7 +746,7 @@ class SimpleKeyboard {
       } else {
         clearTimeout(this.holdInteractionTimeout);
       }
-    }, 100);
+    }, this.options.buttonHoldCycleTime ?? BUTTON_HOLD_CYCLE_DEFAULT);
   }
 
   /**

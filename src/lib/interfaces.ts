@@ -222,6 +222,22 @@ export interface KeyboardOptions {
     disableButtonHold?: boolean;
 
     /**
+     * allowed control buttons. defaults to
+     * ["{delete}","{backspace}","{bksp}","{space}","{tab}","{arrowright}","{arrowleft}","{arrowup}","{arrowdown}"]
+     */
+    buttonHoldAllowedButtons?: string[];
+
+    /**
+     * value in ms, which determines the delay after which a button hold is recognized. Defaults to 500
+     */
+    buttonHoldDelay?: number;
+
+    /**
+     * value in ms, which determines how fast button action is repeated, once hold is recognized. Defaults to 100
+     */
+    buttonHoldCycleTime?: number;
+
+    /**
      * Adds unicode right-to-left control characters to input return values.
      */
     rtl?: boolean;
